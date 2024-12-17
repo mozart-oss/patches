@@ -1,0 +1,44 @@
+From 4b600b2d8bcfaabfd79a63973e93edc84f2a14ac Mon Sep 17 00:00:00 2001
+From: XePeleato <edu@error404software.com>
+Date: Tue, 17 Dec 2024 09:35:08 +0000
+Subject: [PATCH] surfaceflinger: wake up the LCD manually
+
+Change-Id: I7310940de884edc502352931a6aace7878ab2a5f
+Signed-off-by: schwienernitzel <pfelix0803@gmail.com>
+---
+ services/surfaceflinger/SurfaceFlinger.cpp | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index f513b9f..6c241c4 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -99,6 +99,9 @@
+ 
+ #define DISPLAY_COUNT       1
+ 
++#define FBIOBLANK               0x4611
++#define FB_BLANK_UNBLANK        0
++
+ /*
+  * DEBUG_SCREENSHOTS: set to true to check that screenshots are not all
+  * black pixels.
+@@ -3915,6 +3918,15 @@ void SurfaceFlinger::setPowerModeInternal(const sp<DisplayDevice>& hw,
+              int mode, bool stateLockHeld) {
+     ALOGD("Set power mode=%d, type=%d flinger=%p", mode, hw->getDisplayType(),
+             this);
++    // Wake up the LCD.
++    if (mode == 2) {
++        int fd, ret;
++        fd = open("/dev/graphics/fb0",O_WRONLY);
++        ret = ioctl(fd, FBIOBLANK, FB_BLANK_UNBLANK);
++        if (ret < 0) {
++            ALOGE("Error waking up LCD: %d (%s)\n", ret, strerror(errno));
++        }
++    }
+     int32_t type = hw->getDisplayType();
+     int currentMode = hw->getPowerMode();
+ 
+-- 
+2.25.1
+
